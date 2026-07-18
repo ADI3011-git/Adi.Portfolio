@@ -1,5 +1,5 @@
 /* =========================================================
-   Aditya Khairwad — Supply Chain × AI × Kinaxis
+   Aditya Khairwad — Business Architect | Kinaxis
    ========================================================= */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -28,152 +28,159 @@ document.addEventListener('DOMContentLoaded', () => {
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (window.AOS) {
     AOS.init({
-      duration: 700,
+      duration: 650,
       easing: 'ease-out-cubic',
       once: true,
-      offset: 60,
+      offset: 50,
       disable: reduceMotion
     });
   }
 
-  /* ---------- GSAP header hide-on-scroll ---------- */
-  const header = document.querySelector('.site-header');
-  if (window.gsap && header && !reduceMotion) {
-    let lastY = window.scrollY;
-    window.addEventListener('scroll', () => {
-      const y = window.scrollY;
-      if (y > lastY && y > 120) {
-        gsap.to(header, { yPercent: -100, duration: 0.35, ease: 'power2.out' });
-      } else {
-        gsap.to(header, { yPercent: 0, duration: 0.35, ease: 'power2.out' });
+  /* =========================================================
+     SIGNATURE ELEMENT — dotted globe with signal pins
+     A dot-matrix sphere representing global, always-on supply
+     chain visibility, with pulsing location pins and traveling
+     signal arcs (concurrent planning across geographies).
+     ========================================================= */
+  buildGlobe();
+
+  function buildGlobe() {
+    const svg = document.getElementById('networkGraph');
+    if (!svg) return;
+    const ns = 'http://www.w3.org/2000/svg';
+    const cx = 280, cy = 280, R = 220;
+
+    const orbitsG = document.getElementById('graphLines');
+    const dotsG = document.getElementById('graphNodes');
+    const pinsG = document.getElementById('graphSignals');
+
+    /* Outer + latitude/longitude guide ellipses */
+    const guide = document.createElementNS(ns, 'circle');
+    guide.setAttribute('cx', cx); guide.setAttribute('cy', cy); guide.setAttribute('r', R);
+    guide.setAttribute('fill', 'none');
+    guide.setAttribute('stroke', '#E4E6EC');
+    guide.setAttribute('stroke-width', '1');
+    orbitsG.appendChild(guide);
+
+    const latRatios = [0.82, 0.55, 0.25];
+    latRatios.forEach(r => {
+      const ell = document.createElementNS(ns, 'ellipse');
+      ell.setAttribute('cx', cx); ell.setAttribute('cy', cy);
+      ell.setAttribute('rx', R); ell.setAttribute('ry', R * r);
+      ell.setAttribute('fill', 'none');
+      ell.setAttribute('stroke', '#EDEFF3');
+      ell.setAttribute('stroke-width', '1');
+      orbitsG.appendChild(ell);
+    });
+    [0, 45, 90, 135].forEach(deg => {
+      const ell = document.createElementNS(ns, 'ellipse');
+      ell.setAttribute('cx', cx); ell.setAttribute('cy', cy);
+      ell.setAttribute('rx', R * 0.4); ell.setAttribute('ry', R);
+      ell.setAttribute('fill', 'none');
+      ell.setAttribute('stroke', '#EDEFF3');
+      ell.setAttribute('stroke-width', '1');
+      ell.setAttribute('transform', `rotate(${deg} ${cx} ${cy})`);
+      orbitsG.appendChild(ell);
+    });
+
+    /* Dot-matrix sphere fill — denser toward a few "continent" clusters */
+    const clusters = [
+      { a: -40, r: 0.55, spread: 0.55 },
+      { a: 30,  r: 0.7,  spread: 0.5  },
+      { a: 140, r: 0.5,  spread: 0.6  },
+      { a: 200, r: 0.65, spread: 0.45 },
+      { a: 280, r: 0.4,  spread: 0.5  }
+    ];
+    const dots = [];
+    clusters.forEach(c => {
+      const count = 34;
+      for (let i = 0; i < count; i++) {
+        const angle = (c.a + (Math.random() - 0.5) * 70) * Math.PI / 180;
+        const dist = c.r * R * (0.55 + Math.random() * c.spread);
+        const x = cx + Math.cos(angle) * dist;
+        const y = cy + Math.sin(angle) * dist * 0.94;
+        const dxy = Math.hypot(x - cx, (y - cy) / 0.94);
+        if (dxy > R * 0.98) continue;
+        dots.push([x, y, dxy / R]);
       }
-      lastY = y;
-    }, { passive: true });
+    });
+    dots.forEach(([x, y, edge]) => {
+      const dot = document.createElementNS(ns, 'circle');
+      dot.setAttribute('cx', x.toFixed(1));
+      dot.setAttribute('cy', y.toFixed(1));
+      dot.setAttribute('r', 1.6 - edge * 0.5);
+      dot.setAttribute('fill', '#C7CBD4');
+      dot.setAttribute('opacity', (0.85 - edge * 0.35).toFixed(2));
+      dotsG.appendChild(dot);
+    });
+
+    /* Location pins (pulsing) */
+    const pins = [
+      { x: cx - 90, y: cy - 70 },
+      { x: cx + 60, y: cy - 40 },
+      { x: cx - 30, y: cy + 90 },
+      { x: cx + 110, y: cy + 30 }
+    ];
+    pins.forEach((p, i) => {
+      const ring = document.createElementNS(ns, 'circle');
+      ring.setAttribute('cx', p.x); ring.setAttribute('cy', p.y);
+      ring.setAttribute('r', 4);
+      ring.setAttribute('fill', 'none');
+      ring.setAttribute('stroke', '#E24232');
+      ring.setAttribute('stroke-width', '1.4');
+      ring.setAttribute('class', 'globe-pin');
+      if (!reduceMotion) {
+        ring.innerHTML = `<animate attributeName="r" values="4;16;4" dur="2.8s" begin="${i * 0.5}s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.9;0;0.9" dur="2.8s" begin="${i * 0.5}s" repeatCount="indefinite"/>`;
+      }
+      pinsG.appendChild(ring);
+
+      const core = document.createElementNS(ns, 'circle');
+      core.setAttribute('cx', p.x); core.setAttribute('cy', p.y);
+      core.setAttribute('r', 3.4);
+      core.setAttribute('fill', '#E24232');
+      core.setAttribute('class', 'globe-pin');
+      pinsG.appendChild(core);
+    });
+
+    /* Signal arcs between pins */
+    for (let i = 0; i < pins.length - 1; i++) {
+      const a = pins[i], b = pins[i + 1];
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 - 40;
+      const path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', `M${a.x},${a.y} Q${mx},${my} ${b.x},${b.y}`);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', '#E24232');
+      path.setAttribute('stroke-width', '1.2');
+      path.setAttribute('opacity', '0.3');
+      path.setAttribute('stroke-dasharray', '4 5');
+      orbitsG.appendChild(path);
+    }
   }
 
   /* =========================================================
-     SIGNATURE ELEMENT — concurrent planning network graph
-     Nodes represent planning domains; animated packets travel
-     the connecting lines to visualize real-time concurrent
-     signal flow (the core Kinaxis Maestro concept).
+     JOURNEY TIMELINE — mark the current/last node active
      ========================================================= */
-  buildNetworkGraph();
+  const dots = document.querySelectorAll('.timeline-dots span');
+  if (dots.length) dots[dots.length - 1].classList.add('is-active');
 
-  function buildNetworkGraph() {
-    const svg = document.getElementById('networkGraph');
-    if (!svg) return;
+  /* =========================================================
+     Active nav link on scroll
+     ========================================================= */
+  const navLinks = document.querySelectorAll('.main-nav a[href^="#"]');
+  const sections = Array.from(navLinks)
+    .map(l => document.querySelector(l.getAttribute('href')))
+    .filter(Boolean);
 
-    const nodes = [
-      { id: 'demand',    label: 'DEMAND',    x: 280, y: 90  },
-      { id: 'supply',    label: 'SUPPLY',    x: 480, y: 200 },
-      { id: 'inventory', label: 'INVENTORY', x: 440, y: 430 },
-      { id: 'production',label: 'PRODUCTION',x: 200, y: 470 },
-      { id: 'logistics', label: 'LOGISTICS', x: 80,  y: 230 },
-      { id: 'ai',        label: 'AI SIGNAL', x: 280, y: 280 }
-    ];
-
-    const edges = [
-      ['demand','ai'], ['supply','ai'], ['inventory','ai'],
-      ['production','ai'], ['logistics','ai'],
-      ['demand','supply'], ['supply','inventory'],
-      ['inventory','production'], ['production','logistics'],
-      ['logistics','demand']
-    ];
-
-    const linesG = document.getElementById('graphLines');
-    const nodesG = document.getElementById('graphNodes');
-    const signalsG = document.getElementById('graphSignals');
-    const ns = 'http://www.w3.org/2000/svg';
-    const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
-
-    edges.forEach(([a, b], i) => {
-      const na = byId[a], nb = byId[b];
-      const line = document.createElementNS(ns, 'line');
-      line.setAttribute('x1', na.x); line.setAttribute('y1', na.y);
-      line.setAttribute('x2', nb.x); line.setAttribute('y2', nb.y);
-      line.setAttribute('data-edge', i);
-      linesG.appendChild(line);
-    });
-
-    nodes.forEach(n => {
-      const g = document.createElementNS(ns, 'g');
-      g.setAttribute('class', 'graph-node');
-      const isCore = n.id === 'ai';
-      const r = isCore ? 26 : 15;
-
-      if (isCore) {
-        const glow = document.createElementNS(ns, 'circle');
-        glow.setAttribute('cx', n.x); glow.setAttribute('cy', n.y);
-        glow.setAttribute('r', 60); glow.setAttribute('fill', 'url(#coreGlow)');
-        g.appendChild(glow);
-      }
-
-      const circle = document.createElementNS(ns, 'circle');
-      circle.setAttribute('cx', n.x); circle.setAttribute('cy', n.y);
-      circle.setAttribute('r', r);
-      circle.setAttribute('fill', isCore ? 'rgba(227,28,61,0.06)' : 'rgba(30,79,214,0.05)');
-      circle.setAttribute('stroke', isCore ? '#E31C3D' : '#1E4FD6');
-      circle.setAttribute('stroke-width', isCore ? 2 : 1.4);
-      g.appendChild(circle);
-
-      const text = document.createElementNS(ns, 'text');
-      text.setAttribute('x', n.x);
-      text.setAttribute('y', n.y + r + 16);
-      text.setAttribute('text-anchor', 'middle');
-      text.textContent = n.label;
-      g.appendChild(text);
-
-      nodesG.appendChild(g);
-    });
-
-    if (reduceMotion) return;
-
-    /* Traveling signal packets along random edges */
-    const signalCount = 6;
-    for (let i = 0; i < signalCount; i++) {
-      const dot = document.createElementNS(ns, 'circle');
-      dot.setAttribute('r', 3.2);
-      dot.setAttribute('fill', i % 2 === 0 ? '#E31C3D' : '#1E4FD6');
-      dot.setAttribute('class', 'graph-signal');
-      signalsG.appendChild(dot);
-      animateSignal(dot, edges, byId, i * 900);
-    }
-
-    function animateSignal(dot, edges, byId, delay) {
-      function run() {
-        const [a, b] = edges[Math.floor(Math.random() * edges.length)];
-        const na = byId[a], nb = byId[b];
-        const duration = 1800 + Math.random() * 900;
-
-        if (window.gsap) {
-          gsap.fromTo(dot,
-            { attr: { cx: na.x, cy: na.y }, opacity: 0 },
-            {
-              attr: { cx: nb.x, cy: nb.y },
-              opacity: 1,
-              duration: duration / 1000,
-              ease: 'power1.inOut',
-              onComplete: () => {
-                gsap.to(dot, { opacity: 0, duration: 0.3, onComplete: run });
-              }
-            }
-          );
+  if (sections.length && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = '#' + entry.target.id;
+          navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === id));
         }
-      }
-      setTimeout(run, delay);
-    }
-
-    /* Gentle ambient rotation of the whole graph for depth */
-    if (window.gsap) {
-      gsap.to('#networkGraph .graph-nodes, #networkGraph .graph-lines', {
-        rotation: 2,
-        transformOrigin: '50% 50%',
-        duration: 8,
-        yoyo: true,
-        repeat: -1,
-        ease: 'sine.inOut'
       });
-    }
+    }, { rootMargin: '-45% 0px -50% 0px', threshold: 0 });
+    sections.forEach(s => io.observe(s));
   }
 
 });
