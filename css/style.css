@@ -636,8 +636,32 @@ a.contact-item:hover{background:var(--bg-soft-2);transform:translateY(-2px);}
   .section{padding:64px 0;}
   .hero{padding:40px 0 48px;}
   .expertise-grid,.project-grid,.project-grid--2{grid-template-columns:1fr;}
-  .timeline-track,.timeline-dots{grid-template-columns:repeat(2,1fr);row-gap:36px;}
-  .timeline-line-h{display:none;}
+  .timeline{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:16px;
+  }
+
+  .timeline-track{
+    display:grid;
+    grid-template-columns:repeat(7,220px); /* use 6 if you keep only 6 items */
+    gap:24px;
+    min-width:max-content;
+  }
+
+  .timeline-dots{
+    display:grid;
+    grid-template-columns:repeat(7,220px); /* use 6 if you keep only 6 items */
+    min-width:max-content;
+  }
+
+  .timeline-line-h{
+    width:1540px; /* 7 × 220px */
+  }
+
+  .timeline-item{
+    padding-right:0;
+  }
   .cert-row{grid-template-columns:repeat(2,1fr);}
   .hero-actions .btn{flex:1 1 auto;justify-content:center;}
   .case-block{padding:24px 20px;}
